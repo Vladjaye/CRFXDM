@@ -3,68 +3,76 @@ package com.example.carfaxdemo
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import android.util.Log.INFO
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.carfaxdemo.jsondata.Model
 import com.squareup.picasso.Picasso
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.IOException
 
 
 class MainActivity : AppCompatActivity() {
-    lateinit var firstphoto: ImageView
-    lateinit var cardview: CardView
-    lateinit var button: Button
+
+    lateinit var recyclerViewAdapter: RecyclerViewAdapter
+    lateinit var recyclerView: RecyclerView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        firstphoto = findViewById(R.id.firstPhoto)
-        cardview = findViewById(R.id.card_view)
-        button = findViewById(R.id.button_call)
 
-        getData();
+        recyclerView = findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+        recyclerViewAdapter = RecyclerViewAdapter()
+        recyclerView.adapter = recyclerViewAdapter
 
-        button.setOnClickListener {
-            makeCall("123")
-        }
+        getJson();
     }
 
-    fun getData() {
+    fun getJson() {
         val retrofit: Retrofit = Retrofit.Builder()
             .baseUrl("https://carfax-for-consumers.firebaseio.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
-        val call: Call<Data> = retrofitAPI.data
-        call.enqueue(object : Callback<Data> {
-            override fun onResponse(call: Call<Data>, response: Response<Data>) {
-                val model: Data? = response.body()
-                //location.text = model?.phone.orEmpty()
-/*                button.setOnClickListener{
-                    if (model != null) {
-                        makeCall(model.phone)
-                    }
-                }*/
-                Picasso.get().load(model?.photo).into(firstphoto)
 
+
+        val call: Call<Model> = retrofitAPI.data
+        call.enqueue(object : Callback<Model> {
+            override fun onResponse(call: Call<Model>, response: Response<Model>) {
+                Log.println(INFO, "RETROFIT", "Response code is ${response.code()}")
+
+                if (response.code() != 200) {
+                    //network issue - should load local data if any.
+                    Log.println(INFO, "RETROFIT", "Response code is ${response.code()}")
+                }
+
+                var jsonresponse: Model? = response.body()
+                Log.println(INFO, "RETROFIT", "DATA IS: ${jsonresponse?.listings?.get(0)?.images?.large?.toString()}")
+                    recyclerViewAdapter.setData(jsonresponse?.listings)
             }
 
-            override fun onFailure(call: Call<Data>, t: Throwable) {
+            override fun onFailure(call: Call<Model>, t: Throwable) {
                 Toast.makeText(this@MainActivity, "Failed to Download Data", Toast.LENGTH_SHORT)
                     .show();
+                if (t is IOException) {
+                    Log.println(INFO, "RETROFIT", "NETWORK ISSUE")
+                } else {
+                    Log.println(INFO, "RETROFIT", "CONVERSION ISSUE")
+                }
             }
         })
-    }
-
-    fun makeCall(number: String) {
-        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
-        startActivity(intent)
     }
 }
