@@ -1,33 +1,25 @@
 package com.example.carfaxdemo;
 
-import static android.util.Log.INFO;
-
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.carfaxdemo.jsondata.Model;
 import com.squareup.picasso.Picasso;
-
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
-    Model data;
     private List<Model.Listing> listingsList;
     private int carid = 0;
+
     public RecyclerViewAdapter() {
         listingsList = new ArrayList<>();
     }
@@ -41,6 +33,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         RecyclerViewAdapter.ViewHolder viewHolder = new RecyclerViewAdapter.ViewHolder(view);
         return viewHolder;
     }
+
     @Override
     public void onBindViewHolder(RecyclerViewAdapter.ViewHolder holder, int position) {
         Model.Listing car = listingsList.get(position);
@@ -64,7 +57,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         holder.button.setOnClickListener(callListener);
 
         //Log.println(INFO, "DATAINRECYCLER", "IMAGE URL IS: " +car.getImages().getLarge().get(0));
-        Picasso.get().load(car.getImages().getLarge().get(0)).resize(600,380).centerCrop().into(holder.imageView);
+        Picasso.get().load(car.getImages().getLarge().get(0)).resize(600, 380).centerCrop().into(holder.imageView);
 
     }
 
@@ -73,9 +66,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return listingsList.size();
     }
 
-   public void setData(List<Model.Listing> data) {
+    public void setData(List<Model.Listing> data) { //original setdata list for Call way.
         this.listingsList.addAll(data);
         notifyDataSetChanged();
+    }
+
+    public void setRData(Model data) { //reactive way?
+        this.listingsList.addAll(data.getListings());
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -105,6 +102,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             });
         }
     }
+
     public void makeCall(View view, String number) {
         Intent callIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number));
         view.getContext().startActivity(callIntent);
